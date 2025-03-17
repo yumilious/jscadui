@@ -23,16 +23,16 @@ import { readAsArrayBuffer, readAsText } from './src/FileReader.js'
  * @prop {OnFilesChangeHandler} onfileschange
  * @prop {Array<undefined>} libRoots This is never used. TODO Remove
  * @prop {(path:string)=>Promise<FSFileEntry | undefined>} getFile
- * 
+ *
  * @callback OnFilesChangeHandler
  * @param {Array<string>} files
  * @returns {void}
- * 
+ *
  * @typedef WorkspaceAlias
  * @prop {string} name
  * @prop {string} path
  *
- * 
+ *
  * @typedef PathInfo
  * @prop {string} url
  * @prop {string} filename
@@ -49,8 +49,8 @@ export * from './src/FSEntry.js'
 export const splitPath = path => (typeof path === 'string' ? path.split('/').filter(p => p && p !== '.') : path)
 
 /**
- * 
- * @param {string} url 
+ *
+ * @param {string} url
  * @returns {PathInfo}
  */
 export function extractPathInfo(url) {
@@ -109,9 +109,9 @@ export const addToCache = async (cache, path, content) => await cache.put(new Re
 
 
 /**
- * @param {SwHandler} sw 
- * @param {Array<string>} paths 
- * @param {boolean} ignoreMissing 
+ * @param {SwHandler} sw
+ * @param {Array<string>} paths
+ * @param {boolean} ignoreMissing
  * @returns {Promise<[string, FSFileEntry | undefined][]>}
  */
 export const addPreLoadAll = async (sw, paths, ignoreMissing) => {
@@ -126,9 +126,9 @@ export const addPreLoadAll = async (sw, paths, ignoreMissing) => {
 }
 
 /**
- * @param {SwHandler} sw 
- * @param {string} path 
- * @param {boolean} ignoreMissing 
+ * @param {SwHandler} sw
+ * @param {string} path
+ * @param {boolean} ignoreMissing
  * @returns {Promise<FSFileEntry | undefined>}
  */
 export const addPreLoad = async (sw, path, ignoreMissing) => {
@@ -226,7 +226,7 @@ export const registerServiceWorker = async (
 }
 
 /**
- * @param {SwHandler} sw 
+ * @param {SwHandler} sw
  */
 export const clearFs = async sw => {
   sw.roots = []
@@ -235,7 +235,7 @@ export const clearFs = async sw => {
 }
 
 /**
- * @param {Cache} cache 
+ * @param {Cache} cache
  */
 export const clearCache = async cache => {
   const keys = await cache.keys()
@@ -277,9 +277,9 @@ export const extractEntries = async dt => {
 }
 
 /**
- * 
- * @param {Array<Array<FSEntry>>} roots 
- * @param {Array<string> | string} path 
+ *
+ * @param {Array<Array<FSEntry>>} roots
+ * @param {Array<string> | string} path
  * @returns {Promise<FSFileEntry | undefined>}
  */
 export const findFileInRoots = async (roots, path) => {
@@ -292,8 +292,8 @@ export const findFileInRoots = async (roots, path) => {
 
 /**
  * Finds a file by path
- * @param {Array<FSEntry>} arr 
- * @param {Array<string>} path 
+ * @param {Array<FSEntry>} arr
+ * @param {Array<string>} path
  * @param {number} i The current position in the path
  * @returns {Promise<FSFileEntry | undefined>}
  */
@@ -319,7 +319,7 @@ export const findFile = async (arr, path, i) => {
 }
 
 /**
- * @param {FSDirectoryEntry} dir 
+ * @param {FSDirectoryEntry} dir
  * @returns {Promise<Array<FSEntry>>}
  */
 export const loadDir = async dir => {
@@ -331,7 +331,7 @@ export const loadDir = async dir => {
 
 /**
  * This function is async but it is intentionally called without await
- * @param {SwHandler} sw 
+ * @param {SwHandler} sw
  */
 export const checkFiles = async sw => {
   const now = Date.now()
@@ -352,9 +352,9 @@ export const checkFiles = async sw => {
 }
 
 /**
- * 
- * @param {SwHandler} sw 
- * @param {Array<FSEntry>} files 
+ *
+ * @param {SwHandler} sw
+ * @param {Array<FSEntry>} files
  */
 export async function fileDropped(sw, files) {
   sw.filesToCheck.length = 0
@@ -389,10 +389,12 @@ export async function fileDropped(sw, files) {
 }
 
 /**
- * @param {SwHandler} sw 
+ * @param {SwHandler} sw
  */
 export async function analyzeProject(sw) {
   const alias = await getWorkspaceAliases(sw)
+
+  console.log(alias)
 
   if (sw.fileToRun && sw.fileToRun[0] != '/') {
     sw.fileToRun = `/${sw.fileToRun}`
@@ -455,9 +457,9 @@ const getWorkspaceAliases = async sw => {
 }
 
 /**
- * @param {Array<FSFileEntry>} arr 
- * @param {FSFileEntry | string} file 
- * @returns 
+ * @param {Array<FSFileEntry>} arr
+ * @param {FSFileEntry | string} file
+ * @returns
  */
 export const findByFullPath = (arr, file) => {
   const path = typeof file === 'string' ? file : file.fullPath
@@ -465,9 +467,9 @@ export const findByFullPath = (arr, file) => {
 }
 
 /**
- * @param {string} path 
- * @param {FSFileEntry} file 
- * @param {SwHandler} sw 
+ * @param {string} path
+ * @param {FSFileEntry} file
+ * @param {SwHandler} sw
  */
 export const fileIsRequested = (path, file, sw) => {
   const match = findByFullPath(sw.filesToCheck, file)

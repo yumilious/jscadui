@@ -13,6 +13,8 @@ import {ViewState} from './viewState.js';
 import {OrbitControl} from '@jscadui/orbit';
 import {Gizmo} from '@jscadui/html-gizmo';
 import * as welcome from './welcome.js'
+import {addToCache} from "@jscadui/fs-provider";
+import {boundingBox} from "@jscadui/format-common/index.js";
 
 class Launcher {
     /**
@@ -27,10 +29,10 @@ class Launcher {
         this.loadDefault = true;
         this.hasRemoteScript = false;
         this.saveMap = {};
-        this.ctrl = new OrbitControl([document.getElementById(options.viewer)], {...this.viewState.camera});
+        this.ctrl = new OrbitControl(document.getElementById(options.viewer), {...this.viewState.camera});
         this.gizmo = new Gizmo();
-
-        document.getElementById('layout').appendChild(this.gizmo);
+        this.layout = document.getElementById('layout');
+        this.layout.appendChild(this.gizmo);
         this.progressBar = new ProgressBar('progress', 'progressText');
 
         this.worker = new Worker('./build/bundle.worker.js');
@@ -43,6 +45,7 @@ class Launcher {
         this.fsManager = new FsManager(this.workerApi);
         this.paramManager = new ParameterManager(this.workerApi, 'paramsDiv', this.handlers.bind(this));
         this.dragAndDropHandler = new DragAndDropHandler(this.fsManager, this.reloadProject.bind(this));
+        this.editor = editor;
     }
 
     /**
@@ -52,6 +55,34 @@ class Launcher {
      */
     byId(id) {
         return document.getElementById(id);
+    }
+
+    async setFileTree(files = [
+        {
+            "filename": "index.js",
+            "path": "",
+            "fileContent": "const {subtract} = require('@jscad/modeling').booleans; \n\nfunction main(){\n  const childShape = require('/component/childShape.js');\n  const childShape2 = require('/childShape2.js');\n  return subtract(childShape.main(),childShape2.main())\n}\n\nmodule.exports= {main}",
+        },
+        {
+            "path": "/component",
+            "filename": "childShape.js",
+            "fileContent": "const {cube} = require('@jscad/modeling').primitives; \n function main(){ return cube({size:5})}\n module.exports= {main}",
+        },
+        {
+            "path": "",
+            "filename": "childShape2.js",
+            "fileContent": "const {sphere} = require('@jscad/modeling').primitives; \n function main(){ return sphere({radius:3})}\n module.exports= {main}",
+        }
+    ]) {
+        try {
+            await this.fsManager.setFileTree(files);
+        } catch (e) {
+            setError(e)
+        }
+    }
+
+    async initFs() {
+        await this.fsManager.initFs();
     }
 
     /**
@@ -72,12 +103,12 @@ class Launcher {
      * @param {string} [config.base=this.currentBase] - The base URL for the script.
      * @param {Object} [config.root] - The root context for the script.
      */
-    async jscadScript({script, url = './jscad.model.js', base = this.currentBase, root}) {
+    async jscadScript({script, url = './jscad.model.js', base = this.fsManager.sw.base, root}) {
         this.currentBase = base;
         this.loadDefault = false;
         try {
             const result = await this.workerApi.jscadScript({script, url, base, root});
-            this.updateParametersUI(result);
+            this.updateParametersUI(result).then();
             this.handlers().entities(result);
             this.startAutoAnimations(result.def);
         } catch (err) {
@@ -109,7 +140,7 @@ class Launcher {
             if (def.type === "slider" && def.fps && def.autostart) {
                 const value = this.paramManager.lastRunParams[def.name] || 0;
                 // Start the animation callback for the parameter.
-                this.paramManager.startAnimCallback(def, value);
+                this.paramManager.startAnimCallback(def, value).then();
             }
         });
     }
@@ -215,7 +246,7 @@ class Launcher {
      * @param {string} defaultCode - The default script code to be loaded into the editor.
      */
     async initEditor(defaultCode) {
-        editor.init(
+        this.editor.init(
             defaultCode,
             this.executeEditorScript.bind(this),
             this.saveEditorScript.bind(this),
@@ -305,7 +336,7 @@ class Launcher {
      */
     async openRemoteScript(script, url) {
         url = new URL(url, this.appBase).toString();
-        editor.setSource(script, url);
+        this.editor.setSource(script, url);
         await this.jscadScript({script, base: url});
         welcome.dismiss();
     }
@@ -337,8 +368,8 @@ class Launcher {
             const file = await handle.getFile();
             if (file.lastModified > handle.lastMod) {
                 handle.lastMod = file.lastModified;
-                await editor.filesChanged([file]);
-                editor.runScript();
+                await this.editor.filesChanged([file]);
+                this.editor.runScript();
             }
         }
     }
